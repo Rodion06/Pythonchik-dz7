@@ -1,6 +1,6 @@
-streamlit==1.28.0
-pandas==2.0.3
-numpy==1.24.3
-plotly==5.17.0
-requests==2.31.0
-aiohttp==3.8.5
+streamlit
+pandas
+numpy
+plotly
+requests
+aiohttp
