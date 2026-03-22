@@ -22,28 +22,77 @@ st.set_page_config(
 st.title("Climate Change Monitor")
 st.markdown("---")
 
+def generate_sample_data():
+    seasonal_temperatures = {
+        "Moscow": {"winter": -10, "spring": 5, "summer": 18, "autumn": 8},
+        "Berlin": {"winter": 0, "spring": 10, "summer": 20, "autumn": 11},
+        "Beijing": {"winter": -2, "spring": 13, "summer": 27, "autumn": 16},
+        "Dubai": {"winter": 20, "spring": 30, "summer": 40, "autumn": 30},
+        "Cairo": {"winter": 15, "spring": 25, "summer": 35, "autumn": 25}
+    }
+    
+    month_to_season = {
+        12: "winter", 1: "winter", 2: "winter",
+        3: "spring", 4: "spring", 5: "spring",
+        6: "summer", 7: "summer", 8: "summer",
+        9: "autumn", 10: "autumn", 11: "autumn"
+    }
+    
+    dates = pd.date_range(start="2010-01-01", periods=3650, freq="D")
+    data = []
+    
+    for city in seasonal_temperatures.keys():
+        for date in dates:
+            season = month_to_season[date.month]
+            mean_temp = seasonal_temperatures[city][season]
+            temperature = np.random.normal(loc=mean_temp, scale=5)
+            data.append({
+                'city': city,
+                'timestamp': date,
+                'temperature': round(temperature, 2),
+                'season': season
+            })
+    
+    return pd.DataFrame(data)
+
 with st.sidebar:
     st.header("Settings")
-
+    
     uploaded_file = st.file_uploader(
         "Upload CSV file with historical data",
         type=['csv']
     )
-
-    api_key = st.text_input(
-        "OpenWeatherMap API Key",
-        type="password"
-    )
-
-    st.markdown("---")
-
+    
     if uploaded_file is not None:
-        df = pd.read_csv(uploaded_file, parse_dates=['timestamp'])
+        try:
+            df = pd.read_csv(uploaded_file, parse_dates=['timestamp'], encoding='utf-8')
+            st.success(f"Loaded {len(df)} records")
+        except:
+            try:
+                df = pd.read_csv(uploaded_file, parse_dates=['timestamp'], encoding='latin1')
+                st.success(f"Loaded {len(df)} records")
+            except Exception as e:
+                st.error(f"Error reading file: {e}")
+                st.info("Click button below to generate sample data")
+                df = None
+    
+    if st.button("Generate Sample Data"):
+        df = generate_sample_data()
+        st.session_state['df'] = df
+        st.success(f"Generated {len(df)} records for {len(df['city'].unique())} cities")
+        st.rerun()
+    
+    if 'df' in st.session_state:
+        df = st.session_state['df']
         cities = sorted(df['city'].unique())
         selected_city = st.selectbox("Select city", cities)
-
+        
+        api_key = st.text_input(
+            "OpenWeatherMap API Key",
+            type="password"
+        )
+        
         st.markdown("---")
-
         st.subheader("Analysis Parameters")
         window_size = st.slider(
             "Rolling window size (days)",
@@ -52,7 +101,7 @@ with st.sidebar:
             value=30,
             step=7
         )
-
+        
         sigma_multiplier = st.slider(
             "Sigma multiplier for anomaly detection",
             min_value=1.0,
@@ -60,6 +109,11 @@ with st.sidebar:
             value=2.0,
             step=0.5
         )
+    else:
+        selected_city = None
+        api_key = None
+        window_size = 30
+        sigma_multiplier = 2.0
 
 
 def calculate_rolling_stats(df, window_size):
