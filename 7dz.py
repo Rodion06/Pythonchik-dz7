@@ -23,7 +23,7 @@ st.title("Climate Change Monitor")
 st.markdown("---")
 
 def generate_sample_data():
-        seasonal_temperatures = {
+    seasonal_temperatures = {
         "Moscow": {"winter": -10, "spring": 5, "summer": 18, "autumn": 8},
         "Berlin": {"winter": 0, "spring": 10, "summer": 20, "autumn": 11},
         "Beijing": {"winter": -2, "spring": 13, "summer": 27, "autumn": 16},
